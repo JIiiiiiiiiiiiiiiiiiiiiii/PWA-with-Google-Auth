@@ -2,7 +2,7 @@
 Finals Laboratory Examination for ITP110 Web Technologies
 
 ### Steps on how to install 
-
+```bash
 cd backend
 npm install
 npm i express mongoose bcrypt jsonwebtoken cookie-parser cors passport passport-google-oauth20 dotenv socket.io
@@ -25,4 +25,4 @@ npm i react-router-dom axios socket.io-client
 # Create .env:
 # VITE_API_URL=http://localhost:5000
 # VITE_CLIENT_ORIGIN=http://localhost:5173
-
+```
