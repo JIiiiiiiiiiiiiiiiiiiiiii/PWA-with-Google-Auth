@@ -1,7 +1,9 @@
 # PWA-with-Google-Auth
+
 Finals Laboratory Examination for ITP110 Web Technologies
 
-### Steps on how to install 
+### Steps on how to install
+
 ```bash
 cd backend
 npm install
@@ -21,6 +23,8 @@ npm i -D nodemon
 cd frontend
 npm install
 npm i react-router-dom axios socket.io-client
+npm install lucide-react
+
 
 # Create .env:
 # VITE_API_URL=http://localhost:5000

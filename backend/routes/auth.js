@@ -9,15 +9,20 @@ require("dotenv").config()
 const router = express.Router()
 
 function issueToken(res, user) {
+	if (!process.env.JWT_SECRET) {
+		throw new Error("JWT_SECRET is not configured")
+	}
+	if (!user || !user._id) {
+		throw new Error("Invalid user object")
+	}
 	const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
 		expiresIn: "7d",
 	})
 	res.cookie("token", token, {
 		httpOnly: true,
-    secure: false,  
+		secure: process.env.NODE_ENV === "production",
 		sameSite: "lax",
-		secure: process.env.NODE_ENV === "development",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+		maxAge: 7 * 24 * 60 * 60 * 1000,
 	})
 }
 
@@ -44,21 +49,53 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
 	try {
 		const { email, password } = req.body
+		
+		if (!email || !password) {
+			return res.status(400).json({ message: "Email and password are required" })
+		}
+
+		// Check if JWT_SECRET is configured
+		if (!process.env.JWT_SECRET) {
+			console.error("JWT_SECRET is not configured")
+			return res.status(500).json({ message: "Server configuration error" })
+		}
+
 		const user = await User.findOne({ email })
-		if (!user) return res.status(400).json({ message: "Invalid" })
-		const valid = await bcrypt.compare(password, user.passwordHash || "")
-		if (!valid) return res.status(400).json({ message: "Invalid" })
+		if (!user) {
+			return res.status(400).json({ message: "Invalid email or password" })
+		}
+
+		// Check if user has a password (not a Google-only account)
+		if (!user.passwordHash) {
+			return res.status(400).json({ 
+				message: "This account uses Google login. Please sign in with Google." 
+			})
+		}
+
+		const valid = await bcrypt.compare(password, user.passwordHash)
+		if (!valid) {
+			return res.status(400).json({ message: "Invalid email or password" })
+		}
+
 		issueToken(res, user)
 		res.json({ ok: true })
 	} catch (err) {
 		console.error("Login error:", err)
-		res.status(500).json({ message: err.message })
+		res.status(500).json({ 
+			message: err.message || "Internal server error. Please try again later." 
+		})
 	}
 })
 
 // Logout
 router.post("/logout", (req, res) => {
-	res.clearCookie("token")
+	// Clear cookie with same options as when it was set
+	res.clearCookie("token", {
+		httpOnly: true,
+		secure: process.env.NODE_ENV === "production",
+		sameSite: "lax",
+		path: "/"
+	})
 	res.json({ ok: true })
 })
 
